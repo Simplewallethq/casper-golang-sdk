@@ -25,7 +25,7 @@ func NewRpcClient(endpoint string) *RpcClient {
 }
 
 func (c *RpcClient) GetDeploy(hash string) (DeployResult, error) {
-	resp, err := c.rpcCall("info_get_deploy", map[string]string{
+	resp, err := c.RpcCall("info_get_deploy", map[string]string{
 		"deploy_hash": hash,
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func (c *RpcClient) GetStateItem(stateRootHash, key string, path []string) (Stor
 	if len(path) > 0 {
 		params["path"] = path
 	}
-	resp, err := c.rpcCall("state_get_item", params)
+	resp, err := c.RpcCall("state_get_item", params)
 	if err != nil {
 		return StoredValue{}, err
 	}
@@ -65,7 +65,7 @@ func (c *RpcClient) GetStateItem(stateRootHash, key string, path []string) (Stor
 }
 
 func (c *RpcClient) GetAccountBalance(stateRootHash, balanceUref string) (big.Int, error) {
-	resp, err := c.rpcCall("state_get_balance", map[string]string{
+	resp, err := c.RpcCall("state_get_balance", map[string]string{
 		"state_root_hash": stateRootHash,
 		"purse_uref":      balanceUref,
 	})
@@ -94,7 +94,7 @@ func (c *RpcClient) GetAccountInfo(pubkey string, hash string) (AccountResponse,
 	var param Param
 	param.BlockIdentifier.Hash = hash
 	param.PublicKey = pubkey
-	resp, err := c.rpcCall("state_get_account_info", param)
+	resp, err := c.RpcCall("state_get_account_info", param)
 	if err != nil {
 		return AccountResponse{}, err
 	}
@@ -129,7 +129,7 @@ func (c *RpcClient) GetAccountBalanceByKeypair(stateRootHash string, key keypair
 }
 
 func (c *RpcClient) GetLatestBlock() (BlockResponse, error) {
-	resp, err := c.rpcCall("chain_get_block", nil)
+	resp, err := c.RpcCall("chain_get_block", nil)
 	if err != nil {
 		return BlockResponse{}, err
 	}
@@ -144,7 +144,7 @@ func (c *RpcClient) GetLatestBlock() (BlockResponse, error) {
 }
 
 func (c *RpcClient) GetBlockByHeight(height uint64) (BlockResponse, error) {
-	resp, err := c.rpcCall("chain_get_block",
+	resp, err := c.RpcCall("chain_get_block",
 		blockParams{blockIdentifier{
 			Height: height,
 		}})
@@ -162,7 +162,7 @@ func (c *RpcClient) GetBlockByHeight(height uint64) (BlockResponse, error) {
 }
 
 func (c *RpcClient) GetBlockByHash(hash string) (BlockResponse, error) {
-	resp, err := c.rpcCall("chain_get_block",
+	resp, err := c.RpcCall("chain_get_block",
 		blockParams{blockIdentifier{
 			Hash: hash,
 		}})
@@ -180,7 +180,7 @@ func (c *RpcClient) GetBlockByHash(hash string) (BlockResponse, error) {
 }
 
 func (c *RpcClient) GetLatestBlockTransfers() ([]TransferResponse, error) {
-	resp, err := c.rpcCall("chain_get_block_transfers", nil)
+	resp, err := c.RpcCall("chain_get_block_transfers", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (c *RpcClient) GetLatestBlockTransfers() ([]TransferResponse, error) {
 }
 
 func (c *RpcClient) GetBlockTransfersByHeight(height uint64) ([]TransferResponse, error) {
-	resp, err := c.rpcCall("chain_get_block_transfers",
+	resp, err := c.RpcCall("chain_get_block_transfers",
 		blockParams{blockIdentifier{
 			Height: height,
 		}})
@@ -213,7 +213,7 @@ func (c *RpcClient) GetBlockTransfersByHeight(height uint64) ([]TransferResponse
 }
 
 func (c *RpcClient) GetBlockTransfersByHash(blockHash string) ([]TransferResponse, error) {
-	resp, err := c.rpcCall("chain_get_block_transfers",
+	resp, err := c.RpcCall("chain_get_block_transfers",
 		blockParams{blockIdentifier{
 			Hash: blockHash,
 		}})
@@ -231,7 +231,7 @@ func (c *RpcClient) GetBlockTransfersByHash(blockHash string) ([]TransferRespons
 }
 
 func (c *RpcClient) GetValidator() (ValidatorPesponse, error) {
-	resp, err := c.rpcCall("state_get_auction_info", nil)
+	resp, err := c.RpcCall("state_get_auction_info", nil)
 	if err != nil {
 		return ValidatorPesponse{}, err
 	}
@@ -246,7 +246,7 @@ func (c *RpcClient) GetValidator() (ValidatorPesponse, error) {
 }
 
 func (c *RpcClient) GetStatus() (StatusResult, error) {
-	resp, err := c.rpcCall("info_get_status", nil)
+	resp, err := c.RpcCall("info_get_status", nil)
 	if err != nil {
 		return StatusResult{}, err
 	}
@@ -261,7 +261,7 @@ func (c *RpcClient) GetStatus() (StatusResult, error) {
 }
 
 func (c *RpcClient) GetPeers() (PeerResult, error) {
-	resp, err := c.rpcCall("info_get_peers", nil)
+	resp, err := c.RpcCall("info_get_peers", nil)
 	if err != nil {
 		return PeerResult{}, err
 	}
@@ -276,7 +276,7 @@ func (c *RpcClient) GetPeers() (PeerResult, error) {
 }
 
 func (c *RpcClient) GetStateRootHash(stateRootHash string) (StateRootHashResult, error) {
-	resp, err := c.rpcCall("chain_get_state_root_hash", map[string]string{
+	resp, err := c.RpcCall("chain_get_state_root_hash", map[string]string{
 		"state_root_hash": stateRootHash,
 	})
 	if err != nil {
@@ -293,7 +293,7 @@ func (c *RpcClient) GetStateRootHash(stateRootHash string) (StateRootHashResult,
 }
 
 func (c *RpcClient) PutDeploy(deploy Deploy) (JsonPutDeployRes, error) {
-	resp, err := c.rpcCall("account_put_deploy", map[string]interface{}{
+	resp, err := c.RpcCall("account_put_deploy", map[string]interface{}{
 		"deploy": deploy,
 	})
 
@@ -342,7 +342,7 @@ type EraInfo struct {
 
 func (c *RpcClient) GetEraInfo(height int) (EraInfoResult, error) {
 	//fmt.Println("height", height)
-	resp, err := c.rpcCall("chain_get_era_info_by_switch_block", []map[string]interface{}{
+	resp, err := c.RpcCall("chain_get_era_info_by_switch_block", []map[string]interface{}{
 		{
 			"Height": height,
 		},
@@ -363,7 +363,7 @@ func (c *RpcClient) GetEraInfo(height int) (EraInfoResult, error) {
 	return result, nil
 }
 
-func (c *RpcClient) rpcCall(method string, params interface{}) (RpcResponse, error) {
+func (c *RpcClient) RpcCall(method string, params interface{}) (RpcResponse, error) {
 	body, err := json.Marshal(RpcRequest{
 		Version: "2.0",
 		Method:  method,
