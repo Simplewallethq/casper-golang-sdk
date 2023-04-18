@@ -1,4 +1,4 @@
-module github.com/casper-ecosystem/casper-golang-sdk
+module github.com/Simplewallethq/casper-golang-sdk
 
 go 1.16
 
