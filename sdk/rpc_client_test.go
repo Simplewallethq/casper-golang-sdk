@@ -3,6 +3,7 @@ package sdk
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -21,11 +22,52 @@ func TestRpcClient_GetLatestBlock(t *testing.T) {
 
 func TestRpcClient_GetDeploy(t *testing.T) {
 	hash := "1dfdf144eb0422eae3076cd8a17e55089010a133c6555c881ac0b9e2714a1605"
-	_, err := client.GetDeploy(hash)
-
+	res, err := client.GetDeploy(hash)
 	if err != nil {
-		t.Errorf("can't get deploy info")
+		t.Errorf("can't get deploy:%s", err)
 	}
+	for _, arg := range res.Deploy.Session.Transfer.Args {
+		fmt.Println(arg.Type)
+		if arg.ArgValue.ClType.ClTypeClass != nil {
+			if arg.ArgValue.ClType.ClTypeClass.Option != nil {
+				fmt.Println(*arg.ArgValue.ClType.ClTypeClass.Option)
+			}
+			if arg.ArgValue.ClType.ClTypeClass.ByteArray != nil {
+				fmt.Println(arg.ArgValue.ClType.ClTypeClass.ByteArray)
+			}
+		}
+		if arg.ArgValue.ClType.String != nil {
+			fmt.Println(*arg.ArgValue.ClType.String)
+		}
+		if arg.ArgValue.Parsed != nil {
+			if arg.ArgValue.Parsed.Integer != nil {
+				fmt.Println(*arg.ArgValue.Parsed.Integer)
+			}
+			if arg.ArgValue.Parsed.String != nil {
+				fmt.Println(*arg.ArgValue.Parsed.String)
+			}
+		}
+		if arg.ArgValue.Bytes != nil {
+			fmt.Println(*arg.ArgValue.Bytes)
+		}
+		fmt.Println()
+	}
+
+	assert.Equal(t, "amount", res.Deploy.Session.Transfer.Args[0].Type)
+	assert.Equal(t, "U512", *res.Deploy.Session.Transfer.Args[0].ArgValue.ClType.String)
+	assert.Equal(t, "2500000000", *res.Deploy.Session.Transfer.Args[0].ArgValue.Parsed.String)
+	assert.Equal(t, "0400f90295", *res.Deploy.Session.Transfer.Args[0].ArgValue.Bytes)
+
+	assert.Equal(t, "target", res.Deploy.Session.Transfer.Args[1].Type)
+	if res.Deploy.Session.Transfer.Args[1].ArgValue.ClType.ClTypeClass.ByteArray == nil {
+		t.Errorf("cltype is not byte array")
+	}
+
+	assert.Equal(t, "462a2c0cdb4d438e8d04087b2a32081d58946546274fb6b5046ce95e050b78f6", *res.Deploy.Session.Transfer.Args[1].ArgValue.Parsed.String)
+
+	assert.Equal(t, "id", res.Deploy.Session.Transfer.Args[2].Type)
+	assert.Equal(t, "U64", *res.Deploy.Session.Transfer.Args[2].ArgValue.ClType.ClTypeClass.Option)
+	assert.Nil(t, nil, res.Deploy.Session.Transfer.Args[2].ArgValue.Parsed)
 }
 
 func TestRpcClient_GetBlockState(t *testing.T) {

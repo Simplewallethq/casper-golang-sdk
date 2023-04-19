@@ -24,24 +24,6 @@ func NewRpcClient(endpoint string) *RpcClient {
 	}
 }
 
-func (c *RpcClient) GetDeploy(hash string) (DeployResult, error) {
-	resp, err := c.RpcCall("info_get_deploy", map[string]string{
-		"deploy_hash": hash,
-	})
-	if err != nil {
-		return DeployResult{}, err
-	}
-
-	var result DeployResult
-	err = json.Unmarshal(resp.Result, &result)
-
-	if err != nil {
-		return DeployResult{}, fmt.Errorf("failed to get result: %w", err)
-	}
-
-	return result, nil
-}
-
 func (c *RpcClient) GetStateItem(stateRootHash, key string, path []string) (StoredValue, error) {
 	params := map[string]interface{}{
 		"state_root_hash": stateRootHash,
@@ -466,49 +448,8 @@ type Proof struct {
 	Signature string `json:"signature"`
 }
 
-type DeployResult struct {
-	Deploy           JsonDeploy            `json:"deploy"`
-	ExecutionResults []JsonExecutionResult `json:"execution_results"`
-}
-
-type JsonDeploy struct {
-	Hash      string           `json:"hash"`
-	Header    JsonDeployHeader `json:"header"`
-	Approvals []JsonApproval   `json:"approvals"`
-}
-
 type JsonPutDeployRes struct {
 	Hash string `json:"deploy_hash"`
-}
-
-type JsonDeployHeader struct {
-	Account      string    `json:"account"`
-	Timestamp    time.Time `json:"timestamp"`
-	TTL          string    `json:"ttl"`
-	GasPrice     int       `json:"gas_price"`
-	BodyHash     string    `json:"body_hash"`
-	Dependencies []string  `json:"dependencies"`
-	ChainName    string    `json:"chain_name"`
-}
-
-type JsonApproval struct {
-	Signer    string `json:"signer"`
-	Signature string `json:"signature"`
-}
-
-type JsonExecutionResult struct {
-	BlockHash string          `json:"block_hash"`
-	Result    ExecutionResult `json:"result"`
-}
-
-type ExecutionResult struct {
-	Success      SuccessExecutionResult `json:"success"`
-	ErrorMessage *string                `json:"error_message,omitempty"`
-}
-
-type SuccessExecutionResult struct {
-	Transfers []string `json:"transfers"`
-	Cost      string   `json:"cost"`
 }
 
 type storedValueResult struct {
