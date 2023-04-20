@@ -113,7 +113,10 @@ func (e EventService) GetBlocks(page int, count int) (BlocksResult, error) {
 	}
 
 	var blocks BlocksResult
-	parseResponseBody(resp, blocks)
+	err = parseResponseBody(resp, blocks)
+	if err != nil {
+		return BlocksResult{}, err
+	}
 
 	return blocks, nil
 }
@@ -127,7 +130,10 @@ func (e EventService) GetDeployByHash(deployHash string) (DeployResult, error) {
 	}
 
 	var deploy DeployResult
-	parseResponseBody(resp, deploy)
+	err = parseResponseBody(resp, deploy)
+	if err != nil {
+		return DeployResult{}, err
+	}
 
 	return deploy, nil
 }
@@ -141,7 +147,10 @@ func (e EventService) GetBlockByHash(blockHash string) (BlockResult, error) {
 	}
 
 	var block BlockResult
-	parseResponseBody(resp, block)
+	err = parseResponseBody(resp, block)
+	if err != nil {
+		return BlockResult{}, err
+	}
 
 	return block, nil
 }
@@ -155,7 +164,10 @@ func (e EventService) GetAccountDeploy(accountHex string, page int, limit int) (
 	}
 
 	var accountDeploys AccountDeploysResult
-	parseResponseBody(resp, accountDeploys)
+	err = parseResponseBody(resp, accountDeploys)
+	if err != nil {
+		return AccountDeploysResult{}, err
+	}
 
 	return accountDeploys, nil
 }
@@ -169,7 +181,10 @@ func (e EventService) GetTransfersByAccountHash(accountHash string) ([]TransferR
 	}
 
 	var transfers []TransferResult
-	parseResponseBody(resp, transfers)
+	err = parseResponseBody(resp, transfers)
+	if err != nil {
+		return []TransferResult{}, err
+	}
 
 	return transfers, nil
 }
