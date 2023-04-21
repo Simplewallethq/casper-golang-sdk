@@ -68,6 +68,12 @@ func TestRpcClient_GetDeploy(t *testing.T) {
 	assert.Equal(t, "id", res.Deploy.Session.Transfer.Args[2].Type)
 	assert.Equal(t, "U64", *res.Deploy.Session.Transfer.Args[2].ArgValue.ClType.ClTypeClass.Option)
 	assert.Nil(t, nil, res.Deploy.Session.Transfer.Args[2].ArgValue.Parsed)
+	hash_unstake := "36477d92494ed1c0091d74bdee1536785900f1f0b8ebf4a40730531526ebb36f"
+	_, err = client.GetDeploy(hash_unstake)
+	if err != nil {
+		t.Errorf("can't get deploy:%s", err)
+	}
+
 }
 
 func TestRpcClient_GetBlockState(t *testing.T) {
@@ -225,4 +231,41 @@ func TestRpcClient_PutDeploy(t *testing.T) {
 	}
 
 	assert.Equal(t, hex.EncodeToString(deploy.Hash), result.Hash)
+}
+
+func TestRpcClient_QueryGlobalState(t *testing.T) {
+	key := "withdraw-4ac2caf8adfba7087888bde7a426ba179393cd68cfe3e7cb722126cb9452a643"
+	key_deploy := "deploy-d40427fea9b2de7c8af0ca6c8a2e10bb15c44e41274e0e70a025d566afda339f"
+	hash_deploy := "4cd6ed78cf13bac8af85afbadf76937936ee992244dc8ec49bec3072d21aad82"
+	hash := "8027736250ac033f81074ab53920a5bb9e94dfa0c4fa3c4b22e974771d28f3ec"
+	hash2 := "4d43badd4b0ed2f1c2ec977d84602125367b2a6d9bca1a3dfa08eaf1c5f90fe5"
+	res1, err := client.QueryGlobalState(key, hash)
+	if err != nil {
+		t.Errorf("can't get block state %v", err)
+	}
+	if res1.StoredValue.Withdraw != nil {
+		fmt.Println("withdraw", res1.StoredValue.Withdraw)
+		if res1.StoredValue.Withdraw.Amount != nil {
+			fmt.Println("amount", res1.StoredValue.Withdraw.Amount)
+		}
+	}
+
+	res2, err := client.QueryGlobalState(key, hash2)
+	if err != nil {
+		t.Errorf("can't get block state %v", err)
+	}
+	if res2.StoredValue.Withdraw != nil {
+		fmt.Println("withdraw", res2.StoredValue.Withdraw)
+		if res2.StoredValue.Withdraw.Amount != nil {
+			fmt.Println("amount", res2.StoredValue.Withdraw.Amount)
+		}
+	}
+	res3, err := client.QueryGlobalState(key_deploy, hash_deploy)
+	if err != nil {
+		t.Errorf("can't get block state %v", err)
+	}
+	if res3.StoredValue.DeployInfo != nil {
+		fmt.Println("deploy", res3.StoredValue.DeployInfo)
+	}
+
 }

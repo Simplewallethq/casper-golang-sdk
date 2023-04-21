@@ -53,20 +53,107 @@ type JsonExecutionResult struct {
 	Result    ExecutionResult `json:"result"`
 }
 type ExecutionResult struct {
-	Success      SuccessExecutionResult `json:"success"`
-	ErrorMessage *string                `json:"error_message,omitempty"`
+	Success      *SuccessExecutionResult `json:"success"`
+	ErrorMessage *string                 `json:"error_message,omitempty"`
 }
 type SuccessExecutionResult struct {
-	Transfers []string `json:"transfers"`
-	Cost      string   `json:"cost"`
+	Transfers []string         `json:"transfers"`
+	Cost      string           `json:"cost"`
+	Effect    JsonDeployEffect `json:"effect"`
+}
+type JsonDeployEffect struct {
+	Operations []any                  `json:"operations"`
+	Transforms []JsonDeployTransforms `json:"transforms"`
+}
+type JsonDeployTransforms struct {
+	Key       string              `json:"key"`
+	Transform JsonDeployTransform `json:"transform"`
+}
+
+type JsonDeployTransform struct {
+	TransformString *string
+	WriteWithdraw   *JsonDeployWriteWithdraw
+}
+
+func (t *JsonDeployTransform) UnmarshalJSON(data []byte) error {
+	var content any
+	err := json.Unmarshal(data, &content)
+	if err != nil {
+		return err
+	}
+	switch v := content.(type) {
+	case string:
+		t.TransformString = &v
+	case map[string]interface{}:
+		if withdraw, ok := v["WriteWithdraw"]; ok {
+			switch withdrawSlice := withdraw.(type) {
+			case []interface{}:
+				if len(withdrawSlice) == 1 {
+					withdrawMap := withdrawSlice[0]
+					switch withdrawValue := withdrawMap.(type) {
+					case map[string]interface{}:
+						var withdrawRes JsonDeployWriteWithdraw
+						if amount, ok := withdrawValue["amount"]; ok {
+							switch v := amount.(type) {
+							case string:
+								withdrawRes.Amount = v
+							}
+						}
+						if era, ok := withdrawValue["era_of_creation"]; ok {
+							switch v := era.(type) {
+							case int:
+								withdrawRes.EraOfCreation = v
+							}
+						}
+						if bondingPurse, ok := withdrawValue["bonding_purse"]; ok {
+							switch v := bondingPurse.(type) {
+							case string:
+								withdrawRes.BondingPurse = v
+							}
+						}
+						if unbonderPublicKey, ok := withdrawValue["unbonder_public_key"]; ok {
+							switch v := unbonderPublicKey.(type) {
+							case string:
+								withdrawRes.UnbonderPublicKey = v
+							}
+						}
+						if validatorPublicKey, ok := withdrawValue["validator_public_key"]; ok {
+							switch v := validatorPublicKey.(type) {
+							case string:
+								withdrawRes.ValidatorPublicKey = v
+							}
+						}
+						t.WriteWithdraw = &withdrawRes
+					}
+				}
+			}
+
+		}
+
+	}
+	return nil
+}
+
+type JsonDeployWriteWithdraw struct {
+	BondingPurse       string `json:"bonding_purse"`
+	ValidatorPublicKey string `json:"validator_public_key"`
+	UnbonderPublicKey  string `json:"unbonder_public_key"`
+	EraOfCreation      int    `json:"era_of_creation"`
+	Amount             string `json:"amount"`
 }
 
 // session
 type JsonDeploySession struct {
-	Transfer *JsonDeployTransfer `json:"Transfer,omitempty"`
+	Transfer             *JsonDeployTransfer             `json:"Transfer,omitempty"`
+	StoredContractByHash *JsonDeployStoredContractByHash `json:"StoredContractByHash,omitempty"`
 }
 type JsonDeployTransfer struct {
 	Args []JsonDeployTransferArg `json:"args"`
+}
+type JsonDeployStoredContractByHash struct {
+	Hash       string                  `json:"hash"`
+	EntryPoint string                  `json:"entry_point"`
+	Args       []JsonDeployTransferArg `json:"args"`
 }
 type JsonDeployTransferArg struct {
 	Type     string
