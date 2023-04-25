@@ -322,7 +322,7 @@ type EraInfo struct {
 	SeigniorageAllocations []SeigniorageAllocations `json:"seigniorage_allocations"`
 }
 
-func (c *RpcClient) GetEraInfo(height int) (EraInfoResult, error) {
+func (c *RpcClient) GetEraInfo(height int64) (EraInfoResult, error) {
 	//fmt.Println("height", height)
 	resp, err := c.RpcCall("chain_get_era_info_by_switch_block", []map[string]interface{}{
 		{
