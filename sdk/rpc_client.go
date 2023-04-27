@@ -227,6 +227,23 @@ func (c *RpcClient) GetValidator() (ValidatorPesponse, error) {
 	return result, nil
 }
 
+func (c *RpcClient) GetAuctionByHeight(height int64) (ValidatorPesponse, error) {
+	resp, err := c.RpcCall("state_get_auction_info", blockParams{blockIdentifier{
+		Height: uint64(height),
+	}})
+	if err != nil {
+		return ValidatorPesponse{}, err
+	}
+
+	var result ValidatorPesponse
+	err = json.Unmarshal(resp.Result, &result)
+	if err != nil {
+		return ValidatorPesponse{}, fmt.Errorf("failed to get result: #{err}")
+	}
+
+	return result, nil
+}
+
 func (c *RpcClient) GetStatus() (StatusResult, error) {
 	resp, err := c.RpcCall("info_get_status", nil)
 	if err != nil {
