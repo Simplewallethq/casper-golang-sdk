@@ -100,9 +100,10 @@ func (t *JsonDeployTransform) UnmarshalJSON(data []byte) error {
 							}
 						}
 						if era, ok := withdrawValue["era_of_creation"]; ok {
+							//fmt.Printf("type of era is %T\n", era)
 							switch v := era.(type) {
-							case int:
-								withdrawRes.EraOfCreation = v
+							case float64:
+								withdrawRes.EraOfCreation = int(v)
 							}
 						}
 						if bondingPurse, ok := withdrawValue["bonding_purse"]; ok {
