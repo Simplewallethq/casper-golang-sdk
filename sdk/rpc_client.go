@@ -450,8 +450,21 @@ type BlockHeader struct {
 	AccumulatedSeed string    `json:"accumulated_seed"`
 	Timestamp       time.Time `json:"timestamp"`
 	EraID           int       `json:"era_id"`
+	EraEnd          *EraEnd   `json:"era_end"`
 	Height          int       `json:"height"`
 	ProtocolVersion string    `json:"protocol_version"`
+}
+
+type Rewards struct {
+	Validator string `json:"validator"`
+	Amount    int64  `json:"amount"`
+}
+type EraReport struct {
+	Rewards []Rewards `json:"rewards"`
+}
+
+type EraEnd struct {
+	EraReport EraReport `json:"era_report"`
 }
 
 type BlockBody struct {
