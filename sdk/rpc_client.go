@@ -16,11 +16,22 @@ import (
 
 type RpcClient struct {
 	endpoint string
+	client   *http.Client
 }
 
 func NewRpcClient(endpoint string) *RpcClient {
 	return &RpcClient{
 		endpoint: endpoint,
+		client:   &http.Client{},
+	}
+}
+
+func NewRpcClientTimeout(endpoint string, timeout time.Duration) *RpcClient {
+	return &RpcClient{
+		endpoint: endpoint,
+		client: &http.Client{
+			Timeout: timeout,
+		},
 	}
 }
 
@@ -374,7 +385,7 @@ func (c *RpcClient) RpcCall(method string, params interface{}) (RpcResponse, err
 		return RpcResponse{}, errors.Wrap(err, "failed to marshal json")
 	}
 
-	resp, err := http.Post(c.endpoint, "application/json", bytes.NewReader(body))
+	resp, err := c.client.Post(c.endpoint, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return RpcResponse{}, fmt.Errorf("failed to make request: %w", err)
 	}
