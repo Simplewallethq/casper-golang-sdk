@@ -684,8 +684,16 @@ type ValidatorPesponse struct {
 }
 
 type StatusResult struct {
-	LastAddedBlock BlockResponse `json:"last_added_block"`
-	BuildVersion   string        `json:"build_version"`
+	LastAddedBlock LastAddedBlock `json:"last_added_block_info"`
+	Chainspec      string         `json:"chainspec_name"`
+	BuildVersion   string         `json:"build_version"`
+	APIVersion     string         `json:"api_version"`
+}
+
+type LastAddedBlock struct {
+	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
+	EraId  uint64 `json:"era_id"`
 }
 
 type Peer struct {

@@ -76,6 +76,18 @@ func TestRpcClient_GetDeploy(t *testing.T) {
 
 }
 
+func TestRpcClient_GetDeploy2(t *testing.T) {
+	hash := "1dfdf144eb0422eae3076cd8a17e55089010a133c6555c881ac0b9e2714a1605"
+	res, err := client.GetDeploy(hash)
+	if err != nil {
+		t.Errorf("can't get deploy:%s", err)
+	}
+	for _, arg := range res.Deploy.Session.Transfer.Args {
+		fmt.Println(arg.Type)
+	}
+
+}
+
 func TestRpcClient_GetBlockState(t *testing.T) {
 	stateRootHash := "c0eb76e0c3c7a928a0cb43e82eb4fad683d9ad626bcd3b7835a466c0587b0fff"
 	key := "account-hash-a9efd010c7cee2245b5bad77e70d9beb73c8776cbe4698b2d8fdf6c8433d5ba0"
