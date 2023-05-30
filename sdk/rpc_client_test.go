@@ -246,7 +246,7 @@ func TestRpcClient_PutDeploy(t *testing.T) {
 }
 
 func TestRpcClient_QueryGlobalState(t *testing.T) {
-	key := "withdraw-f1075fce3b8cd4eab748b8705ca02444a5e35c0248662649013d8a5cb2b1a87c"
+	key := "withdraw-f870e3cadfde21d7d7686fdf3d1a8413838274d363ca7b27ae71fc9125eb6743"
 	// key_deploy := "deploy-d40427fea9b2de7c8af0ca6c8a2e10bb15c44e41274e0e70a025d566afda339f"
 	// hash_deploy := "4cd6ed78cf13bac8af85afbadf76937936ee992244dc8ec49bec3072d21aad82"
 	hash := "fe7ec35509ccf75685c011271a7f74cc60f14a9c33161ec721ce1006feb9fab6"

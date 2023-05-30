@@ -72,7 +72,7 @@ type JsonDeployTransforms struct {
 
 type JsonDeployTransform struct {
 	TransformString *string
-	WriteWithdraw   *JsonDeployWriteWithdraw
+	WriteWithdraw   []JsonDeployWriteWithdraw
 }
 
 func (t *JsonDeployTransform) UnmarshalJSON(data []byte) error {
@@ -85,11 +85,13 @@ func (t *JsonDeployTransform) UnmarshalJSON(data []byte) error {
 	case string:
 		t.TransformString = &v
 	case map[string]interface{}:
+		t.WriteWithdraw = make([]JsonDeployWriteWithdraw, 0, 0)
 		if withdraw, ok := v["WriteWithdraw"]; ok {
 			switch withdrawSlice := withdraw.(type) {
 			case []interface{}:
-				if len(withdrawSlice) == 1 {
-					withdrawMap := withdrawSlice[0]
+				//if len(withdrawSlice) == 1 {
+				for _, withdrawMap := range withdrawSlice {
+					//withdrawMap := withdrawSlice[0]
 					switch withdrawValue := withdrawMap.(type) {
 					case map[string]interface{}:
 						var withdrawRes JsonDeployWriteWithdraw
@@ -124,7 +126,7 @@ func (t *JsonDeployTransform) UnmarshalJSON(data []byte) error {
 								withdrawRes.ValidatorPublicKey = v
 							}
 						}
-						t.WriteWithdraw = &withdrawRes
+						t.WriteWithdraw = append(t.WriteWithdraw, withdrawRes)
 					}
 				}
 			}
