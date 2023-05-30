@@ -432,7 +432,7 @@ type transferResult struct {
 }
 
 type TransferResponse struct {
-	ID         int64  `json:"id,omitempty"`
+	ID         uint64 `json:"id,omitempty"`
 	DeployHash string `json:"deploy_hash"`
 	From       string `json:"from"`
 	To         string `json:"to"`
