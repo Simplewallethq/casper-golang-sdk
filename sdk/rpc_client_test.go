@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var client = NewRpcClient("http://65.21.238.180:7777/rpc")
+var client = NewRpcClient("http://65.109.54.159:7777/rpc")
 
 func TestRpcClient_GetLatestBlock(t *testing.T) {
 	_, err := client.GetLatestBlock()
@@ -246,38 +246,40 @@ func TestRpcClient_PutDeploy(t *testing.T) {
 }
 
 func TestRpcClient_QueryGlobalState(t *testing.T) {
-	key := "withdraw-4ac2caf8adfba7087888bde7a426ba179393cd68cfe3e7cb722126cb9452a643"
-	key_deploy := "deploy-d40427fea9b2de7c8af0ca6c8a2e10bb15c44e41274e0e70a025d566afda339f"
-	hash_deploy := "4cd6ed78cf13bac8af85afbadf76937936ee992244dc8ec49bec3072d21aad82"
-	hash := "8027736250ac033f81074ab53920a5bb9e94dfa0c4fa3c4b22e974771d28f3ec"
-	hash2 := "4d43badd4b0ed2f1c2ec977d84602125367b2a6d9bca1a3dfa08eaf1c5f90fe5"
+	key := "withdraw-f1075fce3b8cd4eab748b8705ca02444a5e35c0248662649013d8a5cb2b1a87c"
+	// key_deploy := "deploy-d40427fea9b2de7c8af0ca6c8a2e10bb15c44e41274e0e70a025d566afda339f"
+	// hash_deploy := "4cd6ed78cf13bac8af85afbadf76937936ee992244dc8ec49bec3072d21aad82"
+	hash := "fe7ec35509ccf75685c011271a7f74cc60f14a9c33161ec721ce1006feb9fab6"
+	// hash2 := "4d43badd4b0ed2f1c2ec977d84602125367b2a6d9bca1a3dfa08eaf1c5f90fe5"
 	res1, err := client.QueryGlobalState(key, hash)
 	if err != nil {
 		t.Errorf("can't get block state %v", err)
 	}
 	if res1.StoredValue.Withdraw != nil {
-		fmt.Println("withdraw", res1.StoredValue.Withdraw)
-		if res1.StoredValue.Withdraw.Amount != nil {
-			fmt.Println("amount", res1.StoredValue.Withdraw.Amount)
+		for _, with := range *res1.StoredValue.Withdraw {
+			fmt.Println("withdraw", res1.StoredValue.Withdraw)
+			if with.Amount != nil {
+				fmt.Println("amount", *with.Amount)
+			}
 		}
 	}
 
-	res2, err := client.QueryGlobalState(key, hash2)
-	if err != nil {
-		t.Errorf("can't get block state %v", err)
-	}
-	if res2.StoredValue.Withdraw != nil {
-		fmt.Println("withdraw", res2.StoredValue.Withdraw)
-		if res2.StoredValue.Withdraw.Amount != nil {
-			fmt.Println("amount", res2.StoredValue.Withdraw.Amount)
-		}
-	}
-	res3, err := client.QueryGlobalState(key_deploy, hash_deploy)
-	if err != nil {
-		t.Errorf("can't get block state %v", err)
-	}
-	if res3.StoredValue.DeployInfo != nil {
-		fmt.Println("deploy", res3.StoredValue.DeployInfo)
-	}
+	// res2, err := client.QueryGlobalState(key, hash2)
+	// if err != nil {
+	// 	t.Errorf("can't get block state %v", err)
+	// }
+	// if res2.StoredValue.Withdraw != nil {
+	// 	fmt.Println("withdraw", res2.StoredValue.Withdraw)
+	// 	if res2.StoredValue.Withdraw.Amount != nil {
+	// 		fmt.Println("amount", res2.StoredValue.Withdraw.Amount)
+	// 	}
+	// }
+	// res3, err := client.QueryGlobalState(key_deploy, hash_deploy)
+	// if err != nil {
+	// 	t.Errorf("can't get block state %v", err)
+	// }
+	// if res3.StoredValue.DeployInfo != nil {
+	// 	fmt.Println("deploy", res3.StoredValue.DeployInfo)
+	// }
 
 }

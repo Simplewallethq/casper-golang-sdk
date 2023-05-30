@@ -379,7 +379,7 @@ func (c *RpcClient) RpcCall(method string, params interface{}) (RpcResponse, err
 		Method:  method,
 		Params:  params,
 	})
-	//fmt.Println(string(body))
+	//log.Println(string(body))
 
 	if err != nil {
 		return RpcResponse{}, errors.Wrap(err, "failed to marshal json")
@@ -505,7 +505,7 @@ type StoredValue struct {
 	ContractPackage *string               `json:"ContractPackage,omitempty"`
 	Transfer        *TransferResponse     `json:"Transfer,omitempty"`
 	DeployInfo      *JsonDeployInfo       `json:"DeployInfo,omitempty"`
-	Withdraw        *Withdraw             `json:"Withdraw,omitempty"`
+	Withdraw        *[]Withdraw           `json:"Withdraw,omitempty"`
 }
 
 // func (s *StoredValue) UnmarshalJSON(data []byte) error { //TODO USE REFLECT FOR JSON UNMARSHALING
@@ -550,30 +550,30 @@ type Withdraw struct {
 	Amount             *string `json:"amount"`
 }
 
-func (w *Withdraw) UnmarshalJSON(data []byte) error {
-	var raw []struct {
-		BondingPurse       string `json:"bonding_purse"`
-		ValidatorPublicKey string `json:"validator_public_key"`
-		UnbonderPublicKey  string `json:"unbonder_public_key"`
-		EraOfCreation      int    `json:"era_of_creation"`
-		Amount             string `json:"amount"`
-	}
-	err := json.Unmarshal(data, &raw)
-	if err != nil {
-		return err
-	}
-	if len(raw) != 1 {
-		w = nil
-		return nil
-	}
-	w.BondingPurse = &raw[0].BondingPurse
-	w.ValidatorPublicKey = &raw[0].ValidatorPublicKey
-	w.UnbonderPublicKey = &raw[0].UnbonderPublicKey
-	w.EraOfCreation = &raw[0].EraOfCreation
-	w.Amount = &raw[0].Amount
+// func (w *Withdraw) UnmarshalJSON(data []byte) error {
+// 	var raw []struct {
+// 		BondingPurse       string `json:"bonding_purse"`
+// 		ValidatorPublicKey string `json:"validator_public_key"`
+// 		UnbonderPublicKey  string `json:"unbonder_public_key"`
+// 		EraOfCreation      int    `json:"era_of_creation"`
+// 		Amount             string `json:"amount"`
+// 	}
+// 	err := json.Unmarshal(data, &raw)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if len(raw) != 1 {
+// 		w = nil
+// 		return nil
+// 	}
+// 	w.BondingPurse = &raw[0].BondingPurse
+// 	w.ValidatorPublicKey = &raw[0].ValidatorPublicKey
+// 	w.UnbonderPublicKey = &raw[0].UnbonderPublicKey
+// 	w.EraOfCreation = &raw[0].EraOfCreation
+// 	w.Amount = &raw[0].Amount
 
-	return nil
-}
+// 	return nil
+// }
 
 type JsonCLValue struct {
 	Bytes  string      `json:"bytes"`

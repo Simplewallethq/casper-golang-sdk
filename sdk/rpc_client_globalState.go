@@ -18,6 +18,7 @@ func (c *RpcClient) QueryGlobalState(key string, BlockHash string) (GlobalStateR
 			BlockHash: BlockHash,
 		},
 	})
+	//log.Println(string(resp.Result))
 	if err != nil {
 		return GlobalStateResult{}, err
 	}
@@ -26,7 +27,7 @@ func (c *RpcClient) QueryGlobalState(key string, BlockHash string) (GlobalStateR
 	if err != nil {
 		return GlobalStateResult{}, fmt.Errorf("failed to get result: %w", err)
 	}
-	//fmt.Println(result.StoredValue)
+	fmt.Println(*result.StoredValue.Withdraw)
 
 	return result, nil
 }
