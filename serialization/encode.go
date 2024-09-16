@@ -150,7 +150,7 @@ func (enc *Encoder) EncodeFixedArray(v reflect.Value) (int, error) {
 		// copying the array into a new slice.  This is rather ugly, but
 		// the inability to create a constant slice from an
 		// unaddressable array is a limitation of Go.
-		slice := make([]byte, v.Len(), v.Len())
+		slice := make([]byte, v.Len())
 		reflect.Copy(reflect.ValueOf(slice), v)
 		return enc.EncodeFixedByteArray(slice)
 	}
@@ -198,7 +198,7 @@ func (enc *Encoder) EncodeResult(v reflect.Value) (int, error) {
 		vv := v.FieldByName(val.SuccessFieldName())
 
 		if !vv.IsValid() {
-			return n, errors.New(fmt.Sprintf("invalid element: %s", val.SuccessFieldName()))
+			return n, fmt.Errorf("invalid element: %s", val.SuccessFieldName())
 		}
 
 		n2, err = enc.encode(vv.Elem())
@@ -206,7 +206,7 @@ func (enc *Encoder) EncodeResult(v reflect.Value) (int, error) {
 		vv := v.FieldByName(val.ErrorFieldName())
 
 		if !vv.IsValid() {
-			return n, errors.New(fmt.Sprintf("invalid element: %s", val.ErrorFieldName()))
+			return n, fmt.Errorf("invalid element: %s", val.ErrorFieldName())
 		}
 
 		n2, err = enc.encode(vv.Elem())
@@ -301,7 +301,7 @@ func (enc *Encoder) EncodeUnion(v reflect.Value) (int, error) {
 	vv := v.FieldByName(arm)
 
 	if !vv.IsValid() || !ok {
-		return n, errors.New(fmt.Sprintf("invalid union switch: %d", vs))
+		return n, fmt.Errorf("invalid union switch: %d", vs)
 	}
 
 	if arm == "Option" {
@@ -311,7 +311,7 @@ func (enc *Encoder) EncodeUnion(v reflect.Value) (int, error) {
 		}
 
 		return n + n2, nil
-	} else if arm == "Map" || arm == "URef" || arm == "Key"{
+	} else if arm == "Map" || arm == "URef" || arm == "Key" {
 		marsh := vv.Elem().Interface().(Marshaler)
 		n2, err := enc.Encode(marsh)
 		if err != nil {
@@ -403,6 +403,6 @@ func (enc *Encoder) encode(v reflect.Value) (int, error) {
 	case reflect.Interface:
 		return enc.EncodeInterface(v)
 	default:
-		return 0, errors.New(fmt.Sprintf("unsupported type - %d", v.Kind()))
+		return 0, fmt.Errorf("unsupported type - %d", v.Kind())
 	}
 }

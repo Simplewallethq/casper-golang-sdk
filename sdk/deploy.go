@@ -213,9 +213,11 @@ func MakeDeploy(deployParam *DeployParams, payment *ExecutableDeployItem, sessio
 	deployHash := blake2b.Sum256(serializedHeader)
 	resDeployHash := make([]uint8, 32)
 
-	for i, v := range deployHash {
-		resDeployHash[i] = v
-	}
+	// for i, v := range deployHash {
+	// 	resDeployHash[i] = v
+	// }
+	//use copy instead for
+	copy(resDeployHash, deployHash[:])
 
 	approvals := make([]Approval, 0)
 	return NewDeploy(resDeployHash, header, payment, session, approvals)

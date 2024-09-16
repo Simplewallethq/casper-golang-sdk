@@ -16,30 +16,23 @@ import (
 
 type RpcClient struct {
 	endpoint string
+	client   *http.Client
 }
 
 func NewRpcClient(endpoint string) *RpcClient {
 	return &RpcClient{
 		endpoint: endpoint,
+		client:   &http.Client{},
 	}
 }
 
-func (c *RpcClient) GetDeploy(hash string) (DeployResult, error) {
-	resp, err := c.rpcCall("info_get_deploy", map[string]string{
-		"deploy_hash": hash,
-	})
-	if err != nil {
-		return DeployResult{}, err
+func NewRpcClientTimeout(endpoint string, timeout time.Duration) *RpcClient {
+	return &RpcClient{
+		endpoint: endpoint,
+		client: &http.Client{
+			Timeout: timeout,
+		},
 	}
-
-	var result DeployResult
-	err = json.Unmarshal(resp.Result, &result)
-
-	if err != nil {
-		return DeployResult{}, fmt.Errorf("failed to get result: %w", err)
-	}
-
-	return result, nil
 }
 
 func (c *RpcClient) GetStateItem(stateRootHash, key string, path []string) (StoredValue, error) {
@@ -50,7 +43,7 @@ func (c *RpcClient) GetStateItem(stateRootHash, key string, path []string) (Stor
 	if len(path) > 0 {
 		params["path"] = path
 	}
-	resp, err := c.rpcCall("state_get_item", params)
+	resp, err := c.RpcCall("state_get_item", params)
 	if err != nil {
 		return StoredValue{}, err
 	}
@@ -65,7 +58,7 @@ func (c *RpcClient) GetStateItem(stateRootHash, key string, path []string) (Stor
 }
 
 func (c *RpcClient) GetAccountBalance(stateRootHash, balanceUref string) (big.Int, error) {
-	resp, err := c.rpcCall("state_get_balance", map[string]string{
+	resp, err := c.RpcCall("state_get_balance", map[string]string{
 		"state_root_hash": stateRootHash,
 		"purse_uref":      balanceUref,
 	})
@@ -82,6 +75,28 @@ func (c *RpcClient) GetAccountBalance(stateRootHash, balanceUref string) (big.In
 	balance := big.Int{}
 	balance.SetString(result.BalanceValue, 10)
 	return balance, nil
+}
+
+func (c *RpcClient) GetAccountInfo(pubkey string, hash string) (AccountResponse, error) {
+	type Param struct {
+		BlockIdentifier struct {
+			Hash string `json:"Hash"`
+		} `json:"block_identifier"`
+		PublicKey string `json:"public_key"`
+	}
+	var param Param
+	param.BlockIdentifier.Hash = hash
+	param.PublicKey = pubkey
+	resp, err := c.RpcCall("state_get_account_info", param)
+	if err != nil {
+		return AccountResponse{}, err
+	}
+	var result accountResult
+	err = json.Unmarshal(resp.Result, &result)
+	if err != nil {
+		return AccountResponse{}, fmt.Errorf("failed to get result: %w", err)
+	}
+	return result.Block, nil
 }
 
 func (c *RpcClient) GetAccountMainPurseURef(accountHash string) string {
@@ -107,7 +122,7 @@ func (c *RpcClient) GetAccountBalanceByKeypair(stateRootHash string, key keypair
 }
 
 func (c *RpcClient) GetLatestBlock() (BlockResponse, error) {
-	resp, err := c.rpcCall("chain_get_block", nil)
+	resp, err := c.RpcCall("chain_get_block", nil)
 	if err != nil {
 		return BlockResponse{}, err
 	}
@@ -122,7 +137,7 @@ func (c *RpcClient) GetLatestBlock() (BlockResponse, error) {
 }
 
 func (c *RpcClient) GetBlockByHeight(height uint64) (BlockResponse, error) {
-	resp, err := c.rpcCall("chain_get_block",
+	resp, err := c.RpcCall("chain_get_block",
 		blockParams{blockIdentifier{
 			Height: height,
 		}})
@@ -140,7 +155,7 @@ func (c *RpcClient) GetBlockByHeight(height uint64) (BlockResponse, error) {
 }
 
 func (c *RpcClient) GetBlockByHash(hash string) (BlockResponse, error) {
-	resp, err := c.rpcCall("chain_get_block",
+	resp, err := c.RpcCall("chain_get_block",
 		blockParams{blockIdentifier{
 			Hash: hash,
 		}})
@@ -158,7 +173,7 @@ func (c *RpcClient) GetBlockByHash(hash string) (BlockResponse, error) {
 }
 
 func (c *RpcClient) GetLatestBlockTransfers() ([]TransferResponse, error) {
-	resp, err := c.rpcCall("chain_get_block_transfers", nil)
+	resp, err := c.RpcCall("chain_get_block_transfers", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +188,7 @@ func (c *RpcClient) GetLatestBlockTransfers() ([]TransferResponse, error) {
 }
 
 func (c *RpcClient) GetBlockTransfersByHeight(height uint64) ([]TransferResponse, error) {
-	resp, err := c.rpcCall("chain_get_block_transfers",
+	resp, err := c.RpcCall("chain_get_block_transfers",
 		blockParams{blockIdentifier{
 			Height: height,
 		}})
@@ -191,7 +206,7 @@ func (c *RpcClient) GetBlockTransfersByHeight(height uint64) ([]TransferResponse
 }
 
 func (c *RpcClient) GetBlockTransfersByHash(blockHash string) ([]TransferResponse, error) {
-	resp, err := c.rpcCall("chain_get_block_transfers",
+	resp, err := c.RpcCall("chain_get_block_transfers",
 		blockParams{blockIdentifier{
 			Hash: blockHash,
 		}})
@@ -209,22 +224,39 @@ func (c *RpcClient) GetBlockTransfersByHash(blockHash string) ([]TransferRespons
 }
 
 func (c *RpcClient) GetValidator() (ValidatorPesponse, error) {
-	resp, err := c.rpcCall("state_get_auction_info", nil)
+	resp, err := c.RpcCall("state_get_auction_info", nil)
 	if err != nil {
 		return ValidatorPesponse{}, err
 	}
 
-	var result validatorResult
+	var result ValidatorPesponse
 	err = json.Unmarshal(resp.Result, &result)
 	if err != nil {
 		return ValidatorPesponse{}, fmt.Errorf("failed to get result: #{err}")
 	}
 
-	return result.Validator, nil
+	return result, nil
+}
+
+func (c *RpcClient) GetAuctionByHeight(height int64) (ValidatorPesponse, error) {
+	resp, err := c.RpcCall("state_get_auction_info", blockParams{blockIdentifier{
+		Height: uint64(height),
+	}})
+	if err != nil {
+		return ValidatorPesponse{}, err
+	}
+
+	var result ValidatorPesponse
+	err = json.Unmarshal(resp.Result, &result)
+	if err != nil {
+		return ValidatorPesponse{}, fmt.Errorf("failed to get result: #{err}")
+	}
+
+	return result, nil
 }
 
 func (c *RpcClient) GetStatus() (StatusResult, error) {
-	resp, err := c.rpcCall("info_get_status", nil)
+	resp, err := c.RpcCall("info_get_status", nil)
 	if err != nil {
 		return StatusResult{}, err
 	}
@@ -239,7 +271,7 @@ func (c *RpcClient) GetStatus() (StatusResult, error) {
 }
 
 func (c *RpcClient) GetPeers() (PeerResult, error) {
-	resp, err := c.rpcCall("info_get_peers", nil)
+	resp, err := c.RpcCall("info_get_peers", nil)
 	if err != nil {
 		return PeerResult{}, err
 	}
@@ -254,7 +286,7 @@ func (c *RpcClient) GetPeers() (PeerResult, error) {
 }
 
 func (c *RpcClient) GetStateRootHash(stateRootHash string) (StateRootHashResult, error) {
-	resp, err := c.rpcCall("chain_get_state_root_hash", map[string]string{
+	resp, err := c.RpcCall("chain_get_state_root_hash", map[string]string{
 		"state_root_hash": stateRootHash,
 	})
 	if err != nil {
@@ -271,7 +303,7 @@ func (c *RpcClient) GetStateRootHash(stateRootHash string) (StateRootHashResult,
 }
 
 func (c *RpcClient) PutDeploy(deploy Deploy) (JsonPutDeployRes, error) {
-	resp, err := c.rpcCall("account_put_deploy", map[string]interface{}{
+	resp, err := c.RpcCall("account_put_deploy", map[string]interface{}{
 		"deploy": deploy,
 	})
 
@@ -288,18 +320,72 @@ func (c *RpcClient) PutDeploy(deploy Deploy) (JsonPutDeployRes, error) {
 	return result, nil
 }
 
-func (c *RpcClient) rpcCall(method string, params interface{}) (RpcResponse, error) {
+type EraInfoResult struct {
+	APIVersion string     `json:"api_version"`
+	EraSummary EraSummary `json:"era_summary"`
+}
+type EraSummary struct {
+	BlockHash     string             `json:"block_hash"`
+	EraID         int                `json:"era_id"`
+	StoredValue   StoredValueEraInfo `json:"stored_value"`
+	StateRootHash string             `json:"state_root_hash"`
+}
+type StoredValueEraInfo struct {
+	EraInfo EraInfo `json:"EraInfo"`
+}
+type DelegatorEraInfo struct {
+	DelegatorPublicKey string `json:"delegator_public_key"`
+	ValidatorPublicKey string `json:"validator_public_key"`
+	Amount             string `json:"amount"`
+}
+type ValidatorEraInfo struct {
+	ValidatorPublicKey string `json:"validator_public_key"`
+	Amount             string `json:"amount"`
+}
+type SeigniorageAllocations struct {
+	Delegator DelegatorEraInfo `json:"Delegator,omitempty"`
+	Validator ValidatorEraInfo `json:"Validator,omitempty"`
+}
+type EraInfo struct {
+	SeigniorageAllocations []SeigniorageAllocations `json:"seigniorage_allocations"`
+}
+
+func (c *RpcClient) GetEraInfo(height int64) (EraInfoResult, error) {
+	//fmt.Println("height", height)
+	resp, err := c.RpcCall("chain_get_era_info_by_switch_block", []map[string]interface{}{
+		{
+			"Height": height,
+		},
+	})
+
+	if err != nil {
+		return EraInfoResult{}, err
+	}
+	//log.Println(string(resp.Result))
+
+	var result EraInfoResult
+	err = json.Unmarshal(resp.Result, &result)
+	//log.Println(result)
+	if err != nil {
+		return EraInfoResult{}, fmt.Errorf("failed to get era info: %w", err)
+	}
+
+	return result, nil
+}
+
+func (c *RpcClient) RpcCall(method string, params interface{}) (RpcResponse, error) {
 	body, err := json.Marshal(RpcRequest{
 		Version: "2.0",
 		Method:  method,
 		Params:  params,
 	})
+	//log.Println(string(body))
 
 	if err != nil {
 		return RpcResponse{}, errors.Wrap(err, "failed to marshal json")
 	}
 
-	resp, err := http.Post(c.endpoint, "application/json", bytes.NewReader(body))
+	resp, err := c.client.Post(c.endpoint, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return RpcResponse{}, fmt.Errorf("failed to make request: %w", err)
 	}
@@ -321,7 +407,7 @@ func (c *RpcClient) rpcCall(method string, params interface{}) (RpcResponse, err
 	}
 
 	if rpcResponse.Error != nil {
-		return rpcResponse, fmt.Errorf("rpc call failed, code - %d, message - %s", rpcResponse.Error.Code, rpcResponse.Error.Message)
+		return rpcResponse, rpcResponse.Error
 	}
 
 	return rpcResponse, nil
@@ -341,17 +427,12 @@ type RpcResponse struct {
 	Error   *RpcError       `json:"error,omitempty"`
 }
 
-type RpcError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 type transferResult struct {
 	Transfers []TransferResponse `json:"transfers"`
 }
 
 type TransferResponse struct {
-	ID         int64  `json:"id,omitempty"`
+	ID         uint64 `json:"id,omitempty"`
 	DeployHash string `json:"deploy_hash"`
 	From       string `json:"from"`
 	To         string `json:"to"`
@@ -380,8 +461,21 @@ type BlockHeader struct {
 	AccumulatedSeed string    `json:"accumulated_seed"`
 	Timestamp       time.Time `json:"timestamp"`
 	EraID           int       `json:"era_id"`
+	EraEnd          *EraEnd   `json:"era_end"`
 	Height          int       `json:"height"`
 	ProtocolVersion string    `json:"protocol_version"`
+}
+
+type Rewards struct {
+	Validator string `json:"validator"`
+	Amount    int64  `json:"amount"`
+}
+type EraReport struct {
+	Rewards []Rewards `json:"rewards"`
+}
+
+type EraEnd struct {
+	EraReport EraReport `json:"era_report"`
 }
 
 type BlockBody struct {
@@ -395,49 +489,8 @@ type Proof struct {
 	Signature string `json:"signature"`
 }
 
-type DeployResult struct {
-	Deploy           JsonDeploy            `json:"deploy"`
-	ExecutionResults []JsonExecutionResult `json:"execution_results"`
-}
-
-type JsonDeploy struct {
-	Hash      string           `json:"hash"`
-	Header    JsonDeployHeader `json:"header"`
-	Approvals []JsonApproval   `json:"approvals"`
-}
-
 type JsonPutDeployRes struct {
 	Hash string `json:"deploy_hash"`
-}
-
-type JsonDeployHeader struct {
-	Account      string    `json:"account"`
-	Timestamp    time.Time `json:"timestamp"`
-	TTL          string    `json:"ttl"`
-	GasPrice     int       `json:"gas_price"`
-	BodyHash     string    `json:"body_hash"`
-	Dependencies []string  `json:"dependencies"`
-	ChainName    string    `json:"chain_name"`
-}
-
-type JsonApproval struct {
-	Signer    string `json:"signer"`
-	Signature string `json:"signature"`
-}
-
-type JsonExecutionResult struct {
-	BlockHash string          `json:"block_hash"`
-	Result    ExecutionResult `json:"result"`
-}
-
-type ExecutionResult struct {
-	Success      SuccessExecutionResult `json:"success"`
-	ErrorMessage *string                `json:"error_message,omitempty"`
-}
-
-type SuccessExecutionResult struct {
-	Transfers []string `json:"transfers"`
-	Cost      string   `json:"cost"`
 }
 
 type storedValueResult struct {
@@ -452,7 +505,75 @@ type StoredValue struct {
 	ContractPackage *string               `json:"ContractPackage,omitempty"`
 	Transfer        *TransferResponse     `json:"Transfer,omitempty"`
 	DeployInfo      *JsonDeployInfo       `json:"DeployInfo,omitempty"`
+	Withdraw        *[]Withdraw           `json:"Withdraw,omitempty"`
 }
+
+// func (s *StoredValue) UnmarshalJSON(data []byte) error { //TODO USE REFLECT FOR JSON UNMARSHALING
+// 	type Alias StoredValue
+// 	var alias Alias
+// 	var raw interface{}
+// 	err := json.Unmarshal(data, &raw)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	switch v := raw.(type) {
+// 	case map[string]interface{}:
+// 		for k1, v1 := range v {
+// 			switch value := v1.(type) {
+// 			case []interface{}:
+// 				if len(value) == 1 {
+// 					v[k1] = value[0]
+// 				} else if len(value) == 0 {
+// 					v[k1] = nil
+// 				}
+// 			}
+// 		}
+// 		modifiedJSON, err := json.Marshal(v)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		err = json.Unmarshal(modifiedJSON, &alias)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+// 	fmt.Println(alias.Withdraw)
+// 	*s = StoredValue(alias)
+// 	return nil
+// }
+
+type Withdraw struct {
+	BondingPurse       *string `json:"bonding_purse"`
+	ValidatorPublicKey *string `json:"validator_public_key"`
+	UnbonderPublicKey  *string `json:"unbonder_public_key"`
+	EraOfCreation      *int    `json:"era_of_creation"`
+	Amount             *string `json:"amount"`
+}
+
+// func (w *Withdraw) UnmarshalJSON(data []byte) error {
+// 	var raw []struct {
+// 		BondingPurse       string `json:"bonding_purse"`
+// 		ValidatorPublicKey string `json:"validator_public_key"`
+// 		UnbonderPublicKey  string `json:"unbonder_public_key"`
+// 		EraOfCreation      int    `json:"era_of_creation"`
+// 		Amount             string `json:"amount"`
+// 	}
+// 	err := json.Unmarshal(data, &raw)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if len(raw) != 1 {
+// 		w = nil
+// 		return nil
+// 	}
+// 	w.BondingPurse = &raw[0].BondingPurse
+// 	w.ValidatorPublicKey = &raw[0].ValidatorPublicKey
+// 	w.UnbonderPublicKey = &raw[0].UnbonderPublicKey
+// 	w.EraOfCreation = &raw[0].EraOfCreation
+// 	w.Amount = &raw[0].Amount
+
+// 	return nil
+// }
 
 type JsonCLValue struct {
 	Bytes  string      `json:"bytes"`
@@ -471,6 +592,18 @@ type JsonAccount struct {
 type NamedKey struct {
 	Name string `json:"name"`
 	Key  string `json:"key"`
+}
+
+type accountResult struct {
+	Block AccountResponse `json:"account"`
+}
+
+type AccountResponse struct {
+	AccountHash      string           `json:"account_hash"`
+	ActionThresholds ActionThresholds `json:"action_thresholds"`
+	AssociatedKeys   []AssociatedKey  `json:"associated_keys"`
+	MainPurse        string           `json:"main_purse"`
+	NamedKeys        []interface{}    `json:"named_keys"`
 }
 
 type AssociatedKey struct {
@@ -510,6 +643,12 @@ type balanceResponse struct {
 	BalanceValue string `json:"balance_value"`
 }
 
+type AuctionState struct {
+	StateRootHash string          `json:"state_root_hash"`
+	BlockHeight   uint64          `json:"block_height"`
+	EraValidators []EraValidators `json:"era_validators"`
+	Bids          []Bid           `json:"bids"`
+}
 type ValidatorWeight struct {
 	PublicKey string `json:"public_key"`
 	Weight    string `json:"weight"`
@@ -520,10 +659,23 @@ type EraValidators struct {
 	ValidatorWeights []ValidatorWeight `json:"validator_weights"`
 }
 
-type AuctionState struct {
-	StateRootHash string          `json:"state_root_hash"`
-	BlockHeight   uint64          `json:"block_height"`
-	EraValidators []EraValidators `json:"era_validators"`
+type Bid struct {
+	PublicKey string  `json:"public_key"`
+	BidData   BidData `json:"bid"`
+}
+
+type BidData struct {
+	BondingPurse   string      `json:"bonding_purse"`
+	StakedAmount   string      `json:"staked_amount"`
+	DelegationRate int         `json:"delegation_rate"`
+	Delegators     []Delegator `json:"delegators"`
+	Inactive       bool        `json:"inactive"`
+}
+type Delegator struct {
+	PublicKey    string `json:"public_key"`
+	StakedAmount string `json:"staked_amount"`
+	BondingPurse string `json:"bonding_purse"`
+	Delegatee    string `json:"delegatee"`
 }
 
 type ValidatorPesponse struct {
@@ -531,13 +683,17 @@ type ValidatorPesponse struct {
 	AuctionState `json:"auction_state"`
 }
 
-type validatorResult struct {
-	Validator ValidatorPesponse `json:"validator"`
+type StatusResult struct {
+	LastAddedBlock LastAddedBlock `json:"last_added_block_info"`
+	Chainspec      string         `json:"chainspec_name"`
+	BuildVersion   string         `json:"build_version"`
+	APIVersion     string         `json:"api_version"`
 }
 
-type StatusResult struct {
-	LastAddedBlock BlockResponse `json:"last_added_block"`
-	BuildVersion   string        `json:"build_version"`
+type LastAddedBlock struct {
+	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
+	EraId  uint64 `json:"era_id"`
 }
 
 type Peer struct {

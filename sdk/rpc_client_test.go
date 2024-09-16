@@ -2,12 +2,15 @@ package sdk
 
 import (
 	"encoding/hex"
-	"github.com/stretchr/testify/assert"
+	"errors"
+	"fmt"
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-var client = NewRpcClient("http://3.136.227.9:7777/rpc")
+var client = NewRpcClient("http://65.109.54.159:7777/rpc")
 
 func TestRpcClient_GetLatestBlock(t *testing.T) {
 	_, err := client.GetLatestBlock()
@@ -19,11 +22,70 @@ func TestRpcClient_GetLatestBlock(t *testing.T) {
 
 func TestRpcClient_GetDeploy(t *testing.T) {
 	hash := "1dfdf144eb0422eae3076cd8a17e55089010a133c6555c881ac0b9e2714a1605"
-	_, err := client.GetDeploy(hash)
-
+	res, err := client.GetDeploy(hash)
 	if err != nil {
-		t.Errorf("can't get deploy info")
+		t.Errorf("can't get deploy:%s", err)
 	}
+	for _, arg := range res.Deploy.Session.Transfer.Args {
+		fmt.Println(arg.Type)
+		if arg.ArgValue.ClType.ClTypeClass != nil {
+			if arg.ArgValue.ClType.ClTypeClass.Option != nil {
+				fmt.Println(*arg.ArgValue.ClType.ClTypeClass.Option)
+			}
+			if arg.ArgValue.ClType.ClTypeClass.ByteArray != nil {
+				fmt.Println(arg.ArgValue.ClType.ClTypeClass.ByteArray)
+			}
+		}
+		if arg.ArgValue.ClType.String != nil {
+			fmt.Println(*arg.ArgValue.ClType.String)
+		}
+		if arg.ArgValue.Parsed != nil {
+			if arg.ArgValue.Parsed.Integer != nil {
+				fmt.Println(*arg.ArgValue.Parsed.Integer)
+			}
+			if arg.ArgValue.Parsed.String != nil {
+				fmt.Println(*arg.ArgValue.Parsed.String)
+			}
+		}
+		if arg.ArgValue.Bytes != nil {
+			fmt.Println(*arg.ArgValue.Bytes)
+		}
+		fmt.Println()
+	}
+
+	assert.Equal(t, "amount", res.Deploy.Session.Transfer.Args[0].Type)
+	assert.Equal(t, "U512", *res.Deploy.Session.Transfer.Args[0].ArgValue.ClType.String)
+	assert.Equal(t, "2500000000", *res.Deploy.Session.Transfer.Args[0].ArgValue.Parsed.String)
+	assert.Equal(t, "0400f90295", *res.Deploy.Session.Transfer.Args[0].ArgValue.Bytes)
+
+	assert.Equal(t, "target", res.Deploy.Session.Transfer.Args[1].Type)
+	if res.Deploy.Session.Transfer.Args[1].ArgValue.ClType.ClTypeClass.ByteArray == nil {
+		t.Errorf("cltype is not byte array")
+	}
+
+	assert.Equal(t, "462a2c0cdb4d438e8d04087b2a32081d58946546274fb6b5046ce95e050b78f6", *res.Deploy.Session.Transfer.Args[1].ArgValue.Parsed.String)
+
+	assert.Equal(t, "id", res.Deploy.Session.Transfer.Args[2].Type)
+	assert.Equal(t, "U64", *res.Deploy.Session.Transfer.Args[2].ArgValue.ClType.ClTypeClass.Option)
+	assert.Nil(t, nil, res.Deploy.Session.Transfer.Args[2].ArgValue.Parsed)
+	hash_unstake := "36477d92494ed1c0091d74bdee1536785900f1f0b8ebf4a40730531526ebb36f"
+	_, err = client.GetDeploy(hash_unstake)
+	if err != nil {
+		t.Errorf("can't get deploy:%s", err)
+	}
+
+}
+
+func TestRpcClient_GetDeploy2(t *testing.T) {
+	hash := "1dfdf144eb0422eae3076cd8a17e55089010a133c6555c881ac0b9e2714a1605"
+	res, err := client.GetDeploy(hash)
+	if err != nil {
+		t.Errorf("can't get deploy:%s", err)
+	}
+	for _, arg := range res.Deploy.Session.Transfer.Args {
+		fmt.Println(arg.Type)
+	}
+
 }
 
 func TestRpcClient_GetBlockState(t *testing.T) {
@@ -48,6 +110,31 @@ func TestRpcClient_GetAccountBalance(t *testing.T) {
 	if err != nil {
 		t.Errorf("can't get account balance")
 	}
+}
+
+func TestRpcClient_GetAccountInfo(t *testing.T) {
+	pubkey := "020237037ff4845669e59d3e7698e7d58eb97ca378960ac57478a86a6a3535460292"
+	bad_pubkey := "020237037ff4845669e59d3e7698e7d58ee97ca378960ac57478a86a6a3535460292"
+
+	block := "a705d5cf0bca0ec2cc0ffceb2913900669b1234c230340086304989d67dde7d7"
+
+	_, err := client.GetAccountInfo(bad_pubkey, block)
+	var rpcerror *RpcError
+
+	if err != nil {
+		if errors.As(err, &rpcerror) {
+			if rpcerror.Code != -32003 {
+				t.Errorf("bad error code")
+			}
+		}
+	}
+	_, err = client.GetAccountInfo(pubkey, block)
+	if err != nil {
+		t.Errorf("can't get account info")
+	}
+	//t.Errorf("can't get account info")
+	//log.Println("Running test...")
+	//log.Println(err)
 }
 
 func TestRpcClient_GetAccountBalanceByKeypair(t *testing.T) {
@@ -131,7 +218,14 @@ func TestRpcClient_GetPeers(t *testing.T) {
 	}
 }
 
-//make sure your account has balance
+func TestRpcClient_GetEraInfo(t *testing.T) {
+	_, err := client.GetEraInfo(1639836)
+	if err != nil {
+		t.Errorf("can't get era info")
+	}
+}
+
+// make sure your account has balance
 func TestRpcClient_PutDeploy(t *testing.T) {
 	deploy := NewTransferToUniqAddress(*source, UniqAddress{
 		PublicKey:  dest,
@@ -149,4 +243,43 @@ func TestRpcClient_PutDeploy(t *testing.T) {
 	}
 
 	assert.Equal(t, hex.EncodeToString(deploy.Hash), result.Hash)
+}
+
+func TestRpcClient_QueryGlobalState(t *testing.T) {
+	key := "withdraw-f870e3cadfde21d7d7686fdf3d1a8413838274d363ca7b27ae71fc9125eb6743"
+	// key_deploy := "deploy-d40427fea9b2de7c8af0ca6c8a2e10bb15c44e41274e0e70a025d566afda339f"
+	// hash_deploy := "4cd6ed78cf13bac8af85afbadf76937936ee992244dc8ec49bec3072d21aad82"
+	hash := "fe7ec35509ccf75685c011271a7f74cc60f14a9c33161ec721ce1006feb9fab6"
+	// hash2 := "4d43badd4b0ed2f1c2ec977d84602125367b2a6d9bca1a3dfa08eaf1c5f90fe5"
+	res1, err := client.QueryGlobalState(key, hash)
+	if err != nil {
+		t.Errorf("can't get block state %v", err)
+	}
+	if res1.StoredValue.Withdraw != nil {
+		for _, with := range *res1.StoredValue.Withdraw {
+			fmt.Println("withdraw", res1.StoredValue.Withdraw)
+			if with.Amount != nil {
+				fmt.Println("amount", *with.Amount)
+			}
+		}
+	}
+
+	// res2, err := client.QueryGlobalState(key, hash2)
+	// if err != nil {
+	// 	t.Errorf("can't get block state %v", err)
+	// }
+	// if res2.StoredValue.Withdraw != nil {
+	// 	fmt.Println("withdraw", res2.StoredValue.Withdraw)
+	// 	if res2.StoredValue.Withdraw.Amount != nil {
+	// 		fmt.Println("amount", res2.StoredValue.Withdraw.Amount)
+	// 	}
+	// }
+	// res3, err := client.QueryGlobalState(key_deploy, hash_deploy)
+	// if err != nil {
+	// 	t.Errorf("can't get block state %v", err)
+	// }
+	// if res3.StoredValue.DeployInfo != nil {
+	// 	fmt.Println("deploy", res3.StoredValue.DeployInfo)
+	// }
+
 }

@@ -28,6 +28,10 @@ func (h *Hash) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (h Hash) String() string {
+	return hex.EncodeToString(h)
+}
+
 type Timestamp int64
 
 func (t Timestamp) MarshalJSON() ([]byte, error) {

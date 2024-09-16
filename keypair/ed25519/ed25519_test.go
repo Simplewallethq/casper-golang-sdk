@@ -3,11 +3,12 @@ package ed25519
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/blake2b"
 	"io/ioutil"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/blake2b"
 )
 
 func TestEd25519KeyPair_AccountHash(t *testing.T) {
@@ -104,6 +105,9 @@ func TestEd25519KeyPair_ParseKeyPair(t *testing.T) {
 func TestEd25519KeyPair_ParseKey32(t *testing.T) {
 	const key = "d995c93ac47e763433b5ec973cac464c7343d76d6bd47c936cf8ce5d83032061"
 	keyBytes, err := hex.DecodeString(key)
+	if !assert.NoError(t, err, "failed to parse") {
+		return
+	}
 
 	assert.Equal(t, 32, len(keyBytes))
 
@@ -119,6 +123,9 @@ func TestEd25519KeyPair_ParseKey32(t *testing.T) {
 func TestEd25519KeyPair_ParseKey64(t *testing.T) {
 	const key = "d995c93ac47e763433b5ec973cac464c7343d76d6bd47c936cf8ce5d83032061d995c93ac47e763433b5ec973cac464c7343d76d6bd47c936cf8ce5d83032061"
 	keyBytes, err := hex.DecodeString(key)
+	if !assert.NoError(t, err, "failed to parse") {
+		return
+	}
 
 	assert.Equal(t, 64, len(keyBytes))
 
@@ -134,6 +141,9 @@ func TestEd25519KeyPair_ParseKey64(t *testing.T) {
 func TestEd25519KeyPair_ParseError(t *testing.T) {
 	const key = "d995c93ac47e76"
 	keyBytes, err := hex.DecodeString(key)
+	if !assert.NoError(t, err, "failed to parse") {
+		return
+	}
 
 	assert.Greater(t, 32, len(keyBytes))
 

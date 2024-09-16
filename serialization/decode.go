@@ -284,7 +284,7 @@ func (dec *Decoder) DecodeTuple(v reflect.Value) (int, error) {
 	return n, nil
 }
 
-//DecodeMap decodes map
+// DecodeMap decodes map
 func (dec *Decoder) DecodeMap(v reflect.Value) (int, error) {
 	mapLen, n, err := dec.DecodeUInt32()
 	if err != nil {
@@ -500,6 +500,6 @@ func (dec *Decoder) decode(v reflect.Value) (int, error) {
 	case reflect.Interface:
 		return dec.decodeInterface(v)
 	default:
-		return 0, errors.New(fmt.Sprintf("unsupported type - %d", v.Kind()))
+		return 0, fmt.Errorf("unsupported type - %d", v.Kind())
 	}
 }
